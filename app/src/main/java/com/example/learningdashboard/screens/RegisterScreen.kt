@@ -17,9 +17,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-// 导入 collectAsState
 import androidx.compose.runtime.collectAsState
 import com.example.learningdashboard.auth.AuthViewModel
+import androidx.compose.ui.res.stringResource // <-- Import
+import com.example.learningdashboard.R // <-- Import R
 
 @Composable
 fun RegisterScreen(
@@ -34,26 +35,26 @@ fun RegisterScreen(
 
     val uiState by authViewModel.uiState.collectAsState()
 
-
     val isLoading = uiState.isLoading
-    val errorMessage = uiState.profileErrorMessage
-
-
+    // Check for both types of errors
+    val hasError = uiState.profileErrorResId != null || uiState.profileErrorMessage != null
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(text = "Create account", style = MaterialTheme.typography.titleLarge)
+        Text(
+            text = stringResource(id = R.string.register_title), // <-- Change
+            style = MaterialTheme.typography.titleLarge
+        )
 
         OutlinedTextField(
             value = user,
-
             onValueChange = {
                 user = it
                 authViewModel.clearProfileError()
             },
-            label = { Text("Username") },
+            label = { Text(stringResource(id = R.string.label_username)) }, // <-- Change
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
         )
@@ -63,7 +64,7 @@ fun RegisterScreen(
                 email = it
                 authViewModel.clearProfileError()
             },
-            label = { Text("Email") },
+            label = { Text(stringResource(id = R.string.label_email)) }, // <-- Change
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
         )
@@ -73,7 +74,7 @@ fun RegisterScreen(
                 pass = it
                 authViewModel.clearProfileError()
             },
-            label = { Text("Password") },
+            label = { Text(stringResource(id = R.string.label_password)) }, // <-- Change
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
@@ -84,7 +85,7 @@ fun RegisterScreen(
                 confirm = it
                 authViewModel.clearProfileError()
             },
-            label = { Text("Confirm password") },
+            label = { Text(stringResource(id = R.string.label_confirm_password)) }, // <-- Change
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
@@ -92,7 +93,6 @@ fun RegisterScreen(
 
         Button(
             onClick = {
-
                 authViewModel.register(
                     user = user.trim(),
                     email = email.trim(),
@@ -102,15 +102,19 @@ fun RegisterScreen(
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
-        ) { Text("Register") }
+        ) { Text(stringResource(id = R.string.button_register)) } // <-- Change
 
         Button(
             onClick = onLoginClick,
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
-        ) { Text("Have an account? Sign in") }
+        ) { Text(stringResource(id = R.string.prompt_login)) } // <-- Change
 
-        if (errorMessage != null) {
+        if (hasError) {
+            val errorMessage = uiState.profileErrorResId?.let {
+                stringResource(id = it)
+            } ?: uiState.profileErrorMessage ?: ""
+
             Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
         }
     }

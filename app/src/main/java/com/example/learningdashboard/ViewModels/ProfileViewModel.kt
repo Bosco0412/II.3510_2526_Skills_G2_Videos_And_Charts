@@ -3,6 +3,8 @@ package com.example.learningdashboard.ViewModels
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+// Import R
+import com.example.learningdashboard.R
 import com.example.learningdashboard.auth.AppDatabase
 import com.example.learningdashboard.auth.AuthRepository
 import com.example.learningdashboard.auth.User
@@ -15,9 +17,11 @@ import kotlinx.coroutines.launch
 // 1. Define a UI state class for this screen
 data class ProfileUiState(
     val isProfileLoading: Boolean = false,
-    val profileErrorMessage: String? = null,
+    val profileErrorResId: Int? = null, // <-- Changed
+    val profileErrorMessage: String? = null, // <-- Kept for generic errors
     val isPasswordLoading: Boolean = false,
-    val passwordErrorMessage: String? = null,
+    val passwordErrorResId: Int? = null, // <-- Changed
+    val passwordErrorMessage: String? = null, // <-- Kept for generic errors
     val passwordUpdateSuccess: Boolean = false
 )
 
@@ -44,17 +48,17 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
      */
     fun updateFullName(username: String?, newFullName: String) {
         if (username == null) {
-            _uiState.update { it.copy(profileErrorMessage = "User not found") }
+            _uiState.update { it.copy(profileErrorResId = R.string.error_user_not_found) } // <-- Changed
             return
         }
 
         if (newFullName.isBlank()) {
-            _uiState.update { it.copy(profileErrorMessage = "Name cannot be empty") }
+            _uiState.update { it.copy(profileErrorResId = R.string.profile_error_name_empty) } // <-- Changed
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isProfileLoading = true, profileErrorMessage = null) }
+            _uiState.update { it.copy(isProfileLoading = true, profileErrorResId = null) }
             try {
                 // 6. Call the repository to update the database
                 repository.updateUsername(username, newFullName)
@@ -63,7 +67,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 // A better solution would be for AuthViewModel to listen for user changes.
                 _uiState.update { it.copy(isProfileLoading = false) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isProfileLoading = false, profileErrorMessage = e.message) }
+                _uiState.update { it.copy(isProfileLoading = false, profileErrorMessage = e.message) } // <-- Kept for generic
             }
         }
     }
@@ -78,25 +82,25 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         confirmPass: String
     ) {
         if (username == null) {
-            _uiState.update { it.copy(passwordErrorMessage = "User not found") }
+            _uiState.update { it.copy(passwordErrorResId = R.string.error_user_not_found) } // <-- Changed
             return
         }
 
         // 7. Add password validation logic
         if (currentPass.isBlank() || newPass.isBlank() || confirmPass.isBlank()) {
-            _uiState.update { it.copy(passwordErrorMessage = "All fields are required") }
+            _uiState.update { it.copy(passwordErrorResId = R.string.error_all_fields_required) } // <-- Changed
             return
         }
         if (newPass != confirmPass) {
-            _uiState.update { it.copy(passwordErrorMessage = "New passwords do not match") }
+            _uiState.update { it.copy(passwordErrorResId = R.string.error_new_passwords_no_match) } // <-- Changed
             return
         }
         if (newPass.length < 6) { // Assuming a 6-character minimum
-            _uiState.update { it.copy(passwordErrorMessage = "Password must be at least 6 characters") }
+            _uiState.update { it.copy(passwordErrorResId = R.string.error_password_min_length) } // <-- Changed
             return
         }
         if (newPass == currentPass) {
-            _uiState.update { it.copy(passwordErrorMessage = "New password cannot be the same as the old one") }
+            _uiState.update { it.copy(passwordErrorResId = R.string.error_new_password_same_as_old) } // <-- Changed
             return
         }
 
@@ -104,17 +108,24 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             _uiState.update {
                 it.copy(
                     isPasswordLoading = true,
-                    passwordErrorMessage = null,
+                    passwordErrorResId = null, // <-- Changed
                     passwordUpdateSuccess = false
                 )
             }
             try {
                 // 8. Verify the current password is correct
                 val user = repository.getUserByUsername(username)
+
+                if (user == null) {
+                    _uiState.update { it.copy(isPasswordLoading = false, passwordErrorResId = R.string.error_user_not_found) } // <-- Changed
+                    return@launch
+                }
+
                 // !! Note: In a real app, passwords should be hashed!
                 // We are comparing plaintext for simplicity.
-                if (user == null || user.passwordHash != currentPass) {
-                    throw Exception("Incorrect current password")
+                if (user.passwordHash != currentPass) {
+                    _uiState.update { it.copy(isPasswordLoading = false, passwordErrorResId = R.string.error_incorrect_current_password) } // <-- Changed
+                    return@launch
                 }
 
                 // 9. Call repository to update the password
@@ -130,7 +141,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 _uiState.update {
                     it.copy(
                         isPasswordLoading = false,
-                        passwordErrorMessage = e.message ?: "An error occurred"
+                        passwordErrorMessage = e.message ?: "An error occurred" // <-- Kept for generic
                     )
                 }
             }
@@ -139,10 +150,10 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
 
     // 10. Functions to clear errors
     fun clearProfileError() {
-        _uiState.update { it.copy(profileErrorMessage = null) }
+        _uiState.update { it.copy(profileErrorResId = null, profileErrorMessage = null) }
     }
 
     fun clearPasswordError() {
-        _uiState.update { it.copy(passwordErrorMessage = null, passwordUpdateSuccess = false) }
+        _uiState.update { it.copy(passwordErrorResId = null, passwordErrorMessage = null, passwordUpdateSuccess = false) }
     }
 }

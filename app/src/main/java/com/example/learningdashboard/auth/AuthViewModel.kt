@@ -3,6 +3,7 @@ package com.example.learningdashboard.auth
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.learningdashboard.R // Import R file to access resource IDs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +14,6 @@ import kotlinx.coroutines.launch
 
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
-    // 1. Initialize database, DAO, and Repository
     private val repository: AuthRepository
 
     init {
@@ -21,44 +21,37 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         repository = AuthRepository(userDao)
     }
 
-    // 2. registeredUsers Map is gone! Data is now in the database.
-
-    // Private mutable state
     private val _uiState = MutableStateFlow(AuthUiState())
-    // Public immutable state flow
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     /**
-     * Login.
-     * No longer returns String?. It launches a coroutine and updates uiState.
+     * Login
      */
     fun login(user: String, pass: String) {
-        // Start database operations in a coroutine
         viewModelScope.launch {
-            // A. Start: Clear old errors and set loading state
-            _uiState.update { it.copy(isLoading = true, profileErrorMessage = null) }
+            _uiState.update { it.copy(isLoading = true, profileErrorResId = null) }
 
-            // B. Validate input
             if (user.isBlank()) {
-                _uiState.update { it.copy(isLoading = false, profileErrorMessage = "Username cannot be empty") }
+                // Change: Use R.string... ID, not a hardcoded string
+                _uiState.update { it.copy(isLoading = false, profileErrorResId = R.string.error_username_empty) }
                 return@launch
             }
             if (pass.isBlank()) {
-                _uiState.update { it.copy(isLoading = false, profileErrorMessage = "Password cannot be empty") }
+                // Change: Use R.string... ID
+                _uiState.update { it.copy(isLoading = false, profileErrorResId = R.string.error_password_empty) }
                 return@launch
             }
 
-            // C. Access database
             try {
-                // Note: We get data from the User.kt entity
                 val userData = repository.getUserByUsername(user)
 
                 if (userData == null) {
-                    _uiState.update { it.copy(isLoading = false, profileErrorMessage = "User does not exist, please register first") }
-                } else if (userData.passwordHash != pass) { // Check password (real app should check hash)
-                    _uiState.update { it.copy(isLoading = false, profileErrorMessage = "Incorrect password") }
+                    // Change: Use R.string... ID
+                    _uiState.update { it.copy(isLoading = false, profileErrorResId = R.string.error_user_not_exist) }
+                } else if (userData.passwordHash != pass) {
+                    // Change: Use R.string... ID
+                    _uiState.update { it.copy(isLoading = false, profileErrorResId = R.string.error_incorrect_password) }
                 } else {
-                    // D. Login success
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -71,44 +64,45 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
             } catch (e: Exception) {
-                // E. Handle database or other exceptions
+                // Unchanged, but the UI layer can now decide how to format this generic error
                 _uiState.update { it.copy(isLoading = false, profileErrorMessage = "Error: ${e.message}") }
             }
         }
     }
 
     /**
-     * Registration.
-     * Also no longer returns String?.
+     * Register
      */
     fun register(user: String, email: String, pass: String, confirmPass: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, profileErrorMessage = null) }
+            _uiState.update { it.copy(isLoading = true, profileErrorResId = null) }
 
-            // A. Validate all inputs (logic is same as before)
-            val validationError = validateRegistration(user, email, pass, confirmPass)
-            if (validationError != null) {
-                _uiState.update { it.copy(isLoading = false, profileErrorMessage = validationError) }
+            // A. Validate all inputs (logic is the same)
+            // Change: validateRegistration now returns an Int? (Resource ID)
+            val validationErrorResId = validateRegistration(user, email, pass, confirmPass)
+            if (validationErrorResId != null) {
+                _uiState.update { it.copy(isLoading = false, profileErrorResId = validationErrorResId) }
                 return@launch
             }
 
-            // B. Check if user and Email already exist (database operations)
             try {
                 if (repository.getUserByUsername(user) != null) {
-                    _uiState.update { it.copy(isLoading = false, profileErrorMessage = "Username is already taken") }
+                    // Change: Use R.string... ID
+                    _uiState.update { it.copy(isLoading = false, profileErrorResId = R.string.error_username_taken) }
                     return@launch
                 }
                 if (repository.getUserByEmail(email) != null) {
-                    _uiState.update { it.copy(isLoading = false, profileErrorMessage = "Email is already registered") }
+                    // Change: Use R.string... ID
+                    _uiState.update { it.copy(isLoading = false, profileErrorResId = R.string.error_email_taken) }
                     return@launch
                 }
 
-                // C. Registration success, create User object and save to database
+                // C. Registration success
                 val currentTime = System.currentTimeMillis()
-                val newUser = User( // Use User entity
+                val newUser = User(
                     username = user,
                     email = email,
-                    passwordHash = pass, // Reminder: Should store a hash
+                    passwordHash = pass,
                     fullName = user,
                     registeredDate = currentTime
                 )
@@ -128,81 +122,78 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
             } catch (e: Exception) {
-                // E. Handle database insertion exceptions
+                // Unchanged
                 _uiState.update { it.copy(isLoading = false, profileErrorMessage = "Registration failed: ${e.message}") }
             }
         }
     }
 
-    // Helper function: Extract validation logic
-    private fun validateRegistration(user: String, email: String, pass: String, confirmPass: String): String? {
-        if (user.isBlank()) return "Username cannot be empty"
-        if (user.length < 3) return "Username must be at least 3 characters"
-        if (!user.matches(Regex("^[a-zA-Z0-9_]+$"))) return "Username can only contain letters, numbers and underscores"
-        if (email.isBlank()) return "Email cannot be empty"
-        if (!email.matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"))) return "Invalid email format"
-        if (pass.isBlank()) return "Password cannot be empty"
-        if (pass.length < 6) return "Password must be at least 6 characters"
-        if (pass != confirmPass) return "Passwords do not match"
+    // Helper function: returns an Int? resource ID
+    private fun validateRegistration(user: String, email: String, pass: String, confirmPass: String): Int? {
+        if (user.isBlank()) return R.string.error_username_empty
+        if (user.length < 3) return R.string.error_username_min_length
+        if (!user.matches(Regex("^[a-zA-Z0-9_]+$"))) return R.string.error_username_invalid_chars
+        if (email.isBlank()) return R.string.error_email_empty
+        if (!email.matches(Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"))) return R.string.error_email_invalid
+        if (pass.isBlank()) return R.string.error_password_empty
+        if (pass.length < 6) return R.string.error_password_min_length
+        if (pass != confirmPass) return R.string.error_passwords_no_match
         return null // All checks passed
     }
 
 
 
     /**
-     * --- Updated ---
-     * Update user password (using more robust validation from ProfileViewModel)
+     * Update user password
      */
     fun updatePassword(currentPass: String, newPass: String, confirmPass: String) {
-        val currentUser = _uiState.value.username ?: return // Must be logged in
+        val currentUser = _uiState.value.username ?: return
 
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
                     isPasswordLoading = true,
-                    passwordErrorMessage = null,
-                    passwordUpdateSuccess = false // <-- Reset on new attempt
+                    passwordErrorResId = null, // Change
+                    passwordUpdateSuccess = false
                 )
             }
 
-            // Validation from ProfileViewModel
+            // Change: Use R.string... ID
             if (currentPass.isBlank() || newPass.isBlank() || confirmPass.isBlank()) {
-                _uiState.update { it.copy(isPasswordLoading = false, passwordErrorMessage = "All fields are required") }
+                _uiState.update { it.copy(isPasswordLoading = false, passwordErrorResId = R.string.error_all_fields_required) }
                 return@launch
             }
             if (newPass != confirmPass) {
-                _uiState.update { it.copy(isPasswordLoading = false, passwordErrorMessage = "New passwords do not match") }
+                _uiState.update { it.copy(isPasswordLoading = false, passwordErrorResId = R.string.error_new_passwords_no_match) }
                 return@launch
             }
-            if (newPass.length < 6) { // Assuming a 6-character minimum
-                _uiState.update { it.copy(isPasswordLoading = false, passwordErrorMessage = "Password must be at least 6 characters") }
+            if (newPass.length < 6) {
+                _uiState.update { it.copy(isPasswordLoading = false, passwordErrorResId = R.string.error_password_min_length) }
                 return@launch
             }
             if (newPass == currentPass) {
-                _uiState.update { it.copy(isPasswordLoading = false, passwordErrorMessage = "New password cannot be the same as the old one") }
+                _uiState.update { it.copy(isPasswordLoading = false, passwordErrorResId = R.string.error_new_password_same_as_old) }
                 return@launch
             }
 
             try {
-                // Check if current password is correct
                 val userData = repository.getUserByUsername(currentUser)
                 if (userData == null) {
-                    _uiState.update { it.copy(isPasswordLoading = false, passwordErrorMessage = "User not found") }
+                    _uiState.update { it.copy(isPasswordLoading = false, passwordErrorResId = R.string.error_user_not_found) }
                     return@launch
                 }
 
-                if (userData.passwordHash != currentPass) { // Simple check, real app should compare hash
-                    _uiState.update { it.copy(isPasswordLoading = false, passwordErrorMessage = "Incorrect current password") }
+                if (userData.passwordHash != currentPass) {
+                    _uiState.update { it.copy(isPasswordLoading = false, passwordErrorResId = R.string.error_incorrect_current_password) }
                     return@launch
                 }
 
-                // All checks passed, update password
-                repository.updatePassword(currentUser, newPass) // Real app should pass a hash of newPass
+                repository.updatePassword(currentUser, newPass)
                 _uiState.update {
                     it.copy(
                         isPasswordLoading = false,
-                        passwordErrorMessage = null,
-                        passwordUpdateSuccess = true // <-- *** SET TO TRUE ***
+                        passwordErrorResId = null,
+                        passwordUpdateSuccess = true
                     )
                 }
 
@@ -217,34 +208,36 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
      * Logout
      */
     fun logout() {
-        // Reset to initial state on logout
         _uiState.value = AuthUiState()
     }
 
     /**
-     * Helper: Allows UI to clear profile error when user starts typing
+     * Clear profile error
      */
     fun clearProfileError() {
-        _uiState.update { it.copy(profileErrorMessage = null) }
+        // Change: Clear resource ID and old string message
+        _uiState.update { it.copy(profileErrorResId = null, profileErrorMessage = null) }
     }
 
     /**
-     * --- New ---
-     * Helper: Allows UI to clear password error when user starts typing
+     * Clear password error
      */
     fun clearPasswordError() {
-        _uiState.update { it.copy(passwordErrorMessage = null, passwordUpdateSuccess = false) } // <-- *** MODIFIED ***
+        // Change: Clear resource ID and old string message
+        _uiState.update { it.copy(passwordErrorResId = null, passwordErrorMessage = null, passwordUpdateSuccess = false) }
     }
+
+    // ... (updateUsername function remains unchanged, but should also be changed to use resource IDs) ...
     fun updateUsername(newUsername: String) {
-        // (确保 newUsername 不为空，并且可能需要添加更多验证)
+        // (Ensure newUsername is not blank, and more validation might be needed)
         if (newUsername.isBlank()) {
             _uiState.value = _uiState.value.copy(
-                profileErrorMessage = "Username cannot be empty."
+                profileErrorResId = R.string.error_username_empty // Change
             )
             return
         }
 
-        // (你可能还需要检查新用户名是否已被占用)
+        // (You might also need to check if the new username is already taken)
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -252,28 +245,28 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
                 val oldUsername = _uiState.value.username
                 if (oldUsername == null) {
-                    // 如果旧用户名为空，则无法更新
+                    // If oldUsername is null, cannot update
                     _uiState.value = _uiState.value.copy(
-                        profileErrorMessage = "Cannot update username: user not found.",
+                        profileErrorResId = R.string.error_user_not_found, // Change
                         isProfileLoading = false
                     )
                     return@launch
                 }
 
-                // 1. 调用 Repository 更新数据库
+                // 1. Call Repository to update the database
                 repository.updateUsername(oldUsername, newUsername)
 
-                // 2. 更新 UI 状态
+                // 2. Update UI state
                 _uiState.value = _uiState.value.copy(
                     username = newUsername,
                     isProfileLoading = false,
-                    profileErrorMessage = null // 清除错误
+                    profileErrorResId = null // Clear error
                 )
 
             } catch (e: Exception) {
-                // (处理可能的错误，例如新用户名已存在)
+                // (Handle possible errors, e.g., new username already exists)
                 _uiState.value = _uiState.value.copy(
-                    profileErrorMessage = "Error updating username: ${e.message}",
+                    profileErrorMessage = "Error updating username: ${e.message}", // Keep generic error
                     isProfileLoading = false
                 )
             }
@@ -283,13 +276,13 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
 
 /**
- * UI state - Updated Version
+ * UI State - Updated Version
  *
- * Removed UserData, which is now User.kt (database entity)
- * Added isLoading and errorMessage to drive UI states
- * ---
- * Renamed isLoading/errorMessage to be specific for profile/password
- * to prevent UI conflicts.
+ * Change: Replaced `profileErrorMessage` and `passwordErrorMessage` with
+ * `profileErrorResId` and `passwordErrorResId` (Int?), for storing R.string... IDs.
+ *
+ * Kept `profileErrorMessage` and `passwordErrorMessage` as fallbacks,
+ * for displaying dynamic/database exception messages that cannot be converted to resource IDs.
  */
 data class AuthUiState(
     val isLoggedIn: Boolean = false,
@@ -303,10 +296,12 @@ data class AuthUiState(
 
     // States for "Update Full Name"
     val isProfileLoading: Boolean = false,
-    val profileErrorMessage: String? = null,
+    val profileErrorResId: Int? = null, // <-- Change
+    val profileErrorMessage: String? = null, // <-- Kept, as fallback
 
     // States for "Update Password"
     val isPasswordLoading: Boolean = false,
-    val passwordErrorMessage: String? = null,
-    val passwordUpdateSuccess: Boolean = false // <-- *** ADDED ***
+    val passwordErrorResId: Int? = null, // <-- Change
+    val passwordErrorMessage: String? = null, // <-- Kept, as fallback
+    val passwordUpdateSuccess: Boolean = false
 )

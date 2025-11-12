@@ -24,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.learningdashboard.auth.AuthViewModel
+import androidx.compose.ui.res.stringResource // <-- Import
+import com.example.learningdashboard.R // <-- Import R
 
 @Composable
 fun LoginScreen(
@@ -36,6 +38,8 @@ fun LoginScreen(
 
     val authState by authViewModel.uiState.collectAsState()
 
+    // Check for both types of errors
+    val hasError = authState.profileErrorResId != null || authState.profileErrorMessage != null
 
 
     Column(
@@ -47,7 +51,7 @@ fun LoginScreen(
     ) {
 
         Text(
-            text = "OpenPlatform",
+            text = stringResource(id = R.string.login_title), // <-- Change
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.primary
         )
@@ -57,11 +61,11 @@ fun LoginScreen(
             value = username,
             onValueChange = {
                 username = it
-                authViewModel.clearProfileError() // <-- Changed from clearError
+                authViewModel.clearProfileError()
             },
-            label = { Text("Username") },
+            label = { Text(stringResource(id = R.string.label_username)) }, // <-- Change
             modifier = Modifier.fillMaxWidth(),
-            isError = authState.profileErrorMessage != null // <-- Changed from errorMessage
+            isError = hasError // <-- Change
         )
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -69,19 +73,25 @@ fun LoginScreen(
             value = password,
             onValueChange = {
                 password = it
-                authViewModel.clearProfileError() // <-- Changed from clearError
+                authViewModel.clearProfileError()
             },
-            label = { Text("Password") },
+            label = { Text(stringResource(id = R.string.label_password)) }, // <-- Change
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation(),
-            isError = authState.profileErrorMessage != null // <-- Changed from errorMessage
+            isError = hasError // <-- Change
         )
         Spacer(modifier = Modifier.height(16.dp))
 
 
-        if (authState.profileErrorMessage != null) { // <-- Changed from errorMessage
+        // Error message display logic
+        if (hasError) {
+            val errorMessage = authState.profileErrorResId?.let {
+                // Prioritize error from resource ID
+                stringResource(id = it)
+            } ?: authState.profileErrorMessage ?: "" // Otherwise, show error from string
+
             Text(
-                text = authState.profileErrorMessage!!, // <-- Changed from errorMessage
+                text = errorMessage,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -93,13 +103,12 @@ fun LoginScreen(
         } else {
             Button(
                 onClick = {
-
                     authViewModel.login(username, password)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !authState.isLoading
             ) {
-                Text("Login")
+                Text(stringResource(id = R.string.button_login)) // <-- Change
             }
         }
 
@@ -109,7 +118,7 @@ fun LoginScreen(
             onClick = onRegisterClick,
             enabled = !authState.isLoading
         ) {
-            Text("Don't have an account? Register")
+            Text(stringResource(id = R.string.prompt_register)) // <-- Change
         }
     }
 }

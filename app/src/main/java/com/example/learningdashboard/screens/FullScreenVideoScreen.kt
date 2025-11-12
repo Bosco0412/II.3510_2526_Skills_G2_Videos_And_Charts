@@ -22,6 +22,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.learningdashboard.CustomVideoPlayer
+// Import R and stringResource
+import androidx.compose.ui.res.stringResource
+import com.example.learningdashboard.R
 
 /**
  * A dedicated screen for playing a video in fullscreen.
@@ -40,6 +43,8 @@ fun FullScreenVideoScreen(
 
     // This effect manages system UI and orientation
     DisposableEffect(Unit) {
+// ... (rest of DisposableEffect is unchanged) ...
+// ...
         val activity = context as? Activity ?: return@DisposableEffect onDispose {}
         val window = activity.window ?: return@DisposableEffect onDispose {}
         val insetsController = WindowCompat.getInsetsController(window, view)
@@ -89,7 +94,7 @@ fun FullScreenVideoScreen(
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(R.string.video_cd_back), // <-- Changed
                 tint = Color.White // Ensure icon is visible
             )
         }

@@ -15,6 +15,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+// Import R and stringResource
+import androidx.compose.ui.res.stringResource
+import com.example.learningdashboard.R
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.learningdashboard.DailyUsageBarChart
@@ -50,7 +53,7 @@ fun ProgressScreen(
     ) {
         // --- BAR CHART SECTION ---
         Text(
-            text = "Daily Usage (Minutes)",
+            text = stringResource(R.string.progress_title_daily_usage), // <-- Changed
             style = MaterialTheme.typography.headlineMedium
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -66,7 +69,7 @@ fun ProgressScreen(
         Spacer(modifier = Modifier.height(32.dp)) // Space between charts
 
         Text(
-            text = "Usage Distribution",
+            text = stringResource(R.string.progress_title_usage_distribution), // <-- Changed
             style = MaterialTheme.typography.headlineMedium
         )
         Spacer(modifier = Modifier.height(16.dp))

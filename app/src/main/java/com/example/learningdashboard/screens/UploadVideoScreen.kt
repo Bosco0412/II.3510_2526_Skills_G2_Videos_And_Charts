@@ -30,6 +30,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+// Import R and stringResource
+import androidx.compose.ui.res.stringResource
+import com.example.learningdashboard.R
 import androidx.compose.ui.unit.dp
 import com.example.learningdashboard.ViewModels.SharedViewModel
 
@@ -54,12 +57,12 @@ fun UploadVideoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Upload a New Video") },
+                title = { Text(stringResource(R.string.upload_title)) }, // <-- Changed
                 navigationIcon = {
                     IconButton(onClick = onNavigateToVideo) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.video_cd_back) // <-- Changed
                         )
                     }
                 }
@@ -80,7 +83,7 @@ fun UploadVideoScreen(
                 onClick = { pickVideoLauncher.launch("video/*") },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Select Video from Gallery")
+                Text(stringResource(R.string.upload_button_select)) // <-- Changed
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -93,7 +96,7 @@ fun UploadVideoScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "Selected Video:",
+                            text = stringResource(R.string.upload_label_selected_video), // <-- Changed
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -119,10 +122,10 @@ fun UploadVideoScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = selectedVideoUri != null
                 ) {
-                    Text("Confirm Upload")
+                    Text(stringResource(R.string.upload_button_confirm)) // <-- Changed
                 }
             } else {
-                Text("No video selected")
+                Text(stringResource(R.string.upload_label_no_video_selected)) // <-- Changed
             }
         }
     }

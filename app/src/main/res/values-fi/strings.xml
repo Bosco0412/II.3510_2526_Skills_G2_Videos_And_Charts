@@ -1,0 +1,91 @@
+<resources>
+    <string name="app_name">LearningDashboard</string>
+
+    <!-- LoginScreen -->
+    <string name="login_title">OpenPlatform</string>
+    <string name="label_username">Käyttäjätunnus</string>
+    <string name="label_password">Salasana</string>
+    <string name="button_login">Kirjaudu sisään</string>
+    <string name="prompt_register">Eikö sinulla ole tiliä? Rekisteröidy</string>
+
+    <!-- RegisterScreen -->
+    <string name="register_title">Luo tili</string>
+    <string name="label_email">Sähköposti</string>
+    <string name="label_confirm_password">Vahvista salasana</string>
+    <string name="button_register">Rekisteröidy</string>
+    <string name="prompt_login">Onko sinulla jo tili? Kirjaudu sisään</string>
+
+    <!-- AuthViewModel Validation & Error Messages -->
+    <string name="error_username_empty">Käyttäjätunnus ei voi olla tyhjä</string>
+    <string name="error_password_empty">Salasana ei voi olla tyhjä</string>
+    <string name="error_user_not_exist">Käyttäjää ei ole olemassa, rekisteröidy ensin</string>
+    <string name="error_incorrect_password">Väärä salasana</string>
+    <string name="error_generic">Virhe: %s</string>
+
+    <!-- Registration Errors -->
+    <string name="error_username_min_length">Käyttäjätunnuksen on oltava vähintään 3 merkkiä pitkä</string>
+    <string name="error_username_invalid_chars">Käyttäjätunnus voi sisältää vain kirjaimia, numeroita ja alaviivoja</string>
+    <string name="error_email_empty">Sähköposti ei voi olla tyhjä</string>
+    <string name="error_email_invalid">Virheellinen sähköpostimuoto</string>
+    <string name="error_password_min_length">Salasanan on oltava vähintään 6 merkkiä pitkä</string>
+    <string name="error_passwords_no_match">Salasanat eivät täsmää</string>
+    <string name="error_username_taken">Käyttäjätunnus on jo varattu</string>
+    <string name="error_email_taken">Sähköposti on jo rekisteröity</string>
+    <string name="error_registration_failed">Rekisteröinti epäonnistui: %s</string>
+
+    <!-- Password Update Errors -->
+    <string name="error_all_fields_required">Kaikki kentät vaaditaan</string>
+    <string name="error_new_passwords_no_match">Uudet salasanat eivät täsmää</string>
+    <string name="error_new_password_same_as_old">Uusi salasana ei voi olla sama kuin vanha</string>
+    <string name="error_user_not_found">Käyttäjää ei löydy</string>
+    <string name="error_incorrect_current_password">Nykyinen salasana on väärä</string>
+    <string name="error_password_update_failed">Päivitys epäonnistui: %s</string>
+
+    <!-- ProfileScreen -->
+    <string name="profile_title">Profiilisivu</string>
+    <string name="profile_tab_edit_username">Muokkaa käyttäjätunnusta</string>
+    <string name="profile_tab_change_password">Vaihda salasana</string>
+    <string name="profile_label_username">Käyttäjätunnus</string>
+    <string name="profile_label_email">Sähköposti</string>
+    <string name="profile_label_member_since">Jäsenenä</string>
+    <string name="profile_label_not_available">Ei saatavilla</string>
+    <string name="profile_button_save_changes">Tallenna muutokset</string>
+    <string name="profile_button_update_password">Päivitä salasana</string>
+    <string name="profile_label_current_password">Nykyinen salasana</string>
+    <string name="profile_label_new_password">Uusi salasana</string>
+    <string name="profile_label_confirm_new_password">Vahvista uusi salasana</string>
+    <string name="profile_success_password_updated">Salasana päivitetty onnistuneesti!</string>
+    <string name="profile_error_name_empty">Nimi ei voi olla tyhjä</string>
+
+    <!-- ProgressScreen -->
+    <string name="progress_title_daily_usage">Päivittäinen käyttö (minuuttia)</string>
+    <string name="progress_title_usage_distribution">Käytön jakautuminen</string>
+    <string name="progress_label_night">Yö</string>
+    <string name="progress_label_morning">Aamu</string>
+    <string name="progress_label_afternoon">Iltapäivä</string>
+    <string name="progress_label_evening">Ilta</string>
+
+    <!-- VideoScreen -->
+    <string name="video_title">Videot</string>
+    <string name="video_title_uploaded">Ladattu video %d</string>
+    <string name="video_uploader_you">Sinä</string>
+    <string name="video_uploader_generic">Lataaja</string>
+    <string name="video_button_upload">Lataa video</string>
+    <string name="video_cd_uploader_icon">Lataajan kuvake</string>
+
+    <!-- FullScreenVideoScreen -->
+    <string name="video_cd_back">Takaisin</string>
+
+    <!-- UploadVideoScreen -->
+    <string name="upload_title">Lataa uusi video</string>
+    <string name="upload_button_select">Valitse video galleriasta</string>
+    <string name="upload_label_selected_video">Valittu video:</string>
+    <string name="upload_button_confirm">Vahvista lataus</string>
+    <string name="upload_label_no_video_selected">Videota ei ole valittu</string>
+
+    <!-- Navigation -->
+    <string name="nav_videos">Videot</string>
+    <string name="nav_progress">käyttäjän tila</string>
+    <string name="nav_profile">Profiili</string>
+    <string name="button_logout">Kirjaudu ulos</string>
+</resources>

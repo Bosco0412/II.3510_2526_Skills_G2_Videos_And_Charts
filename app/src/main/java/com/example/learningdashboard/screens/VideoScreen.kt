@@ -32,13 +32,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+// Import R and stringResource
+import androidx.compose.ui.res.stringResource
+import com.example.learningdashboard.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.learningdashboard.CustomVideoPlayer
 import com.example.learningdashboard.ViewModels.SharedViewModel
 
 // --- Data class to hold video info ---
+// ... (VideoItem and sample data remain unchanged) ...
 data class VideoItem(
+// ...
+// ...
     val id: String,
     val title: String,
     val uploader: String,
@@ -52,10 +58,13 @@ const val SAMPLE_VIDEO_URL_3 = "https://commondatastorage.googleapis.com/gtv-vid
 
 // --- Updated Sample Data ---
 val sampleVideos = listOf(
+// ...
+// ...
     VideoItem("1", "Big Buck Bunny", "Blender Foundation", SAMPLE_VIDEO_URL_1),
     VideoItem("2", "Elephants Dream", "Blender Foundation", SAMPLE_VIDEO_URL_2),
     VideoItem("3", "Sintel", "Blender Foundation", SAMPLE_VIDEO_URL_3)
 )
+
 
 // --- Screen 1: Video ---
 @Composable
@@ -71,8 +80,8 @@ fun VideoScreen(
     val allVideos = sampleVideos + videoUris.mapIndexed { index, uri ->
         VideoItem(
             id = "uploaded_$index",
-            title = "Uploaded Video ${index + 1}",
-            uploader = "You",
+            title = stringResource(R.string.video_title_uploaded, index + 1), // <-- Changed
+            uploader = stringResource(R.string.video_uploader_you), // <-- Changed
             videoUrl = uri.toString()
         )
     }
@@ -80,7 +89,10 @@ fun VideoScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToUpload) {
-                Icon(Icons.Filled.Add, contentDescription = "Upload Video")
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = stringResource(R.string.video_button_upload) // <-- Changed
+                )
             }
         }
     ) { paddingValues ->
@@ -93,7 +105,7 @@ fun VideoScreen(
         ) {
             item {
                 Text(
-                    text = "Videos",
+                    text = stringResource(R.string.video_title), // <-- Changed
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
@@ -151,7 +163,7 @@ fun VideoCardItem(
                 // Uploader Icon
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Uploader",
+                    contentDescription = stringResource(R.string.video_cd_uploader_icon), // <-- Changed
                     modifier = Modifier
                         .size(40.dp)
                         .background(Color.Gray, CircleShape)

@@ -35,30 +35,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+// Import R and stringResource
+import androidx.compose.ui.res.stringResource
+import com.example.learningdashboard.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-// import androidx.lifecycle.viewmodel.compose.viewModel // 1. No longer needed
-// import com.example.learningdashboard.ViewModels.ProfileViewModel // 2. No longer needed
-// import com.example.learningdashboard.ViewModels.ProfileUiState // 3. No longer needed
+import com.example.learningdashboard.ViewModels.ProfileUiState
+import com.example.learningdashboard.ViewModels.ProfileViewModel
 import com.example.learningdashboard.auth.AuthUiState
-import com.example.learningdashboard.auth.AuthViewModel // <-- *** IMPORT AuthViewModel ***
+import com.example.learningdashboard.auth.AuthViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
 fun ProfileScreen(
-    // We still need AuthUiState to display username, email, etc.
     authState: AuthUiState,
-    // We no longer need all the separate lambdas,
-    // we'll get the AuthViewModel from the NavGraph
-    authViewModel: AuthViewModel? // 4. <-- *** MODIFIED *** (Nullable for preview)
+    authViewModel: AuthViewModel?, // Keep using AuthViewModel for auth state
+    profileViewModel: ProfileViewModel, // <-- *** ADD ProfileViewModel for profile/password logic ***
+    onLogout: () -> Unit // <-- Add logout callback
 ) {
     // 1. State for the USERNAME input
-    var usernameInput by remember { mutableStateOf("") } // <-- *** MODIFIED ***
+    var usernameInput by remember { mutableStateOf("") }
 
     // --- States for Password Update ---
     var currentPassword by remember { mutableStateOf("") }
@@ -70,36 +71,44 @@ fun ProfileScreen(
 
     // --- State for Tabs ---
     var selectedTabIndex by remember { mutableStateOf(0) }
-    val tabTitles = listOf("Edit Username", "Change Password") // <-- *** MODIFIED ***
+    val tabTitles = listOf(
+        stringResource(R.string.profile_tab_edit_username), // <-- Changed
+        stringResource(R.string.profile_tab_change_password) // <-- Changed
+    )
 
-    // 5. We NO LONGER observe ProfileViewModel. We use authState directly.
+    // 5. Observe the NEW ProfileViewModel's state
+    val profileUiState by profileViewModel.uiState.collectAsState() // <-- *** NEW ***
 
     // 2. Sync USERNAME input when authState changes
-    LaunchedEffect(authState.username) { // <-- *** MODIFIED ***
-        usernameInput = authState.username ?: "" // <-- *** MODIFIED ***
+    LaunchedEffect(authState.username) {
+        usernameInput = authState.username ?: ""
     }
 
     // 3. Clear profile error when user starts typing USERNAME
-    LaunchedEffect(usernameInput) { // <-- *** MODIFIED ***
-        if (authState.profileErrorMessage != null) {
-            authViewModel?.clearProfileError() // <-- *** MODIFIED ***
+    LaunchedEffect(usernameInput) {
+        if (profileUiState.profileErrorResId != null || profileUiState.profileErrorMessage != null) { // <-- Changed
+            profileViewModel.clearProfileError() // <-- Changed
         }
     }
 
     // --- Clear password error OR success when user starts typing passwords ---
     LaunchedEffect(currentPassword, newPassword, confirmPassword) {
-        if (authState.passwordErrorMessage != null || authState.passwordUpdateSuccess) { // <-- *** MODIFIED ***
-            authViewModel?.clearPasswordError() // <-- *** MODIFIED ***
+        if (profileUiState.passwordErrorResId != null || profileUiState.passwordErrorMessage != null || profileUiState.passwordUpdateSuccess) { // <-- Changed
+            profileViewModel.clearPasswordError() // <-- Changed
         }
     }
 
     // --- NEW: Detect password change success and clear fields ---
-    LaunchedEffect(authState.passwordUpdateSuccess) { // <-- *** MODIFIED ***
-        if (authState.passwordUpdateSuccess) { // <-- *** MODIFIED ***
+    LaunchedEffect(profileUiState.passwordUpdateSuccess) { // <-- Changed
+        if (profileUiState.passwordUpdateSuccess) { // <-- Changed
             // Clear fields only on success
             currentPassword = ""
             newPassword = ""
             confirmPassword = ""
+
+            // We also need to clear the success message in the VM
+            // (or it will reappear on recomposition)
+            // Let's modify clearPasswordError in ProfileViewModel to do this
         }
     }
 
@@ -112,13 +121,12 @@ fun ProfileScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Profile Page",
+            text = stringResource(R.string.profile_title), // <-- Changed
             style = MaterialTheme.typography.headlineMedium
         )
         Spacer(modifier = Modifier.height(24.dp))
 
         // 4. Display read-only user information (from AuthState)
-        // This is now always up-to-date because AuthViewModel's state is updated
         UserInfoCard(
             username = authState.username,
             email = authState.email,
@@ -135,8 +143,8 @@ fun ProfileScreen(
                     onClick = {
                         selectedTabIndex = index
                         // --- NEW: Clear states when switching tabs ---
-                        authViewModel?.clearPasswordError() // <-- *** MODIFIED ***
-                        authViewModel?.clearProfileError() // <-- *** MODIFIED ***
+                        profileViewModel.clearPasswordError() // <-- Changed
+                        profileViewModel.clearProfileError() // <-- Changed
                     },
                     text = { Text(title) }
                 )
@@ -150,15 +158,15 @@ fun ProfileScreen(
             // Tab 0: Edit Name
             0 -> {
                 EditProfileCard(
-                    usernameInput = usernameInput, // <-- *** MODIFIED ***
-                    onUsernameChange = { usernameInput = it }, // <-- *** MODIFIED ***
-                    // 6. Pass the full AuthUiState
-                    authState = authState, // <-- *** MODIFIED ***
-                    // 7. Call the AuthViewModel function directly
+                    usernameInput = usernameInput,
+                    onUsernameChange = { usernameInput = it },
+                    // 6. Pass the NEW ProfileUiState
+                    profileUiState = profileUiState, // <-- *** MODIFIED ***
+                    // 7. Call the ProfileViewModel function
                     onUpdateProfile = {
-                        // We use the function that updates both DB and UI state
-                        // *** 重要提示: 你需要在 AuthViewModel 中实现 updateUsername 方法 ***
-                        authViewModel?.updateUsername(usernameInput) // <-- *** MODIFIED ***
+                        profileViewModel.updateFullName(authState.username, usernameInput) // <-- *** MODIFIED ***
+                        // We also need to update AuthViewModel's state
+                        authViewModel?.updateUsername(usernameInput) // <-- *** ADDED ***
                     }
                 )
             }
@@ -178,11 +186,12 @@ fun ProfileScreen(
                     onConfirmPasswordChange = { confirmPassword = it },
                     confirmPasswordVisible = confirmPasswordVisible,
                     onConfirmPasswordVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible },
-                    // 8. Pass the full AuthUiState
-                    authState = authState, // <-- *** MODIFIED ***
-                    // 9. Call the AuthViewModel function directly
+                    // 8. Pass the NEW ProfileUiState
+                    profileUiState = profileUiState, // <-- *** MODIFIED ***
+                    // 9. Call the ProfileViewModel function
                     onUpdatePassword = {
-                        authViewModel?.updatePassword( // <-- *** MODIFIED ***
+                        profileViewModel.updatePassword( // <-- *** MODIFIED ***
+                            authState.username,
                             currentPassword,
                             newPassword,
                             confirmPassword
@@ -191,21 +200,28 @@ fun ProfileScreen(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- Logout Button ---
+        Button(
+            onClick = onLogout,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Logout") // This could also be a string resource
+        }
     }
 }
 
 // ===================================================================
-// UserInfoCard, ProfileInfoRow, PasswordTextField,
-// and toFormattedDate REMAIN THE SAME
 // ...
-// The signatures for EditProfileCard and ChangePasswordCard are modified
 // ===================================================================
 
 @Composable
 private fun EditProfileCard(
-    usernameInput: String, // <-- *** MODIFIED ***
-    onUsernameChange: (String) -> Unit, // <-- *** MODIFIED ***
-    authState: AuthUiState, // <-- *** MODIFIED ***
+    usernameInput: String,
+    onUsernameChange: (String) -> Unit,
+    profileUiState: ProfileUiState, // <-- *** MODIFIED ***
     onUpdateProfile: () -> Unit
 ) {
     Card(
@@ -214,25 +230,29 @@ private fun EditProfileCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Edit Your Username", // <-- *** MODIFIED ***
+                text = stringResource(R.string.profile_tab_edit_username), // <-- Changed
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
             OutlinedTextField(
-                value = usernameInput, // <-- *** MODIFIED ***
-                onValueChange = onUsernameChange, // <-- *** MODIFIED ***
-                label = { Text("Username") }, // <-- *** MODIFIED ***
+                value = usernameInput,
+                onValueChange = onUsernameChange,
+                label = { Text(stringResource(R.string.profile_label_username)) }, // <-- Changed
                 modifier = Modifier.fillMaxWidth(),
-                // 10. Use the AuthUiState
-                isError = authState.profileErrorMessage != null, // <-- *** MODIFIED ***
+                // 10. Use the ProfileUiState
+                isError = profileUiState.profileErrorResId != null || profileUiState.profileErrorMessage != null, // <-- *** MODIFIED ***
                 singleLine = true
             )
 
-            // 11. Use the AuthUiState
-            if (authState.profileErrorMessage != null) { // <-- *** MODIFIED ***
+            // 11. Use the ProfileUiState for error messages
+            val errorMessage = profileUiState.profileErrorResId?.let {
+                stringResource(id = it)
+            } ?: profileUiState.profileErrorMessage // Fallback to generic string error
+
+            if (errorMessage != null) { // <-- *** MODIFIED ***
                 Text(
-                    text = authState.profileErrorMessage, // <-- *** MODIFIED ***
+                    text = errorMessage, // <-- *** MODIFIED ***
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 16.dp, top = 4.dp)
@@ -243,19 +263,19 @@ private fun EditProfileCard(
 
             Button(
                 onClick = onUpdateProfile,
-                // 12. Use the AuthUiState
-                enabled = !authState.isProfileLoading, // <-- *** MODIFIED ***
+                // 12. Use the ProfileUiState
+                enabled = !profileUiState.isProfileLoading, // <-- *** MODIFIED ***
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // 13. Use the AuthUiState
-                if (authState.isProfileLoading) { // <-- *** MODIFIED ***
+                // 13. Use the ProfileUiState
+                if (profileUiState.isProfileLoading) { // <-- *** MODIFIED ***
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Save Changes")
+                    Text(stringResource(R.string.profile_button_save_changes)) // <-- Changed
                 }
             }
         }
@@ -276,7 +296,7 @@ private fun ChangePasswordCard(
     onConfirmPasswordChange: (String) -> Unit,
     confirmPasswordVisible: Boolean,
     onConfirmPasswordVisibilityChange: () -> Unit,
-    authState: AuthUiState, // <-- *** MODIFIED ***
+    profileUiState: ProfileUiState, // <-- *** MODIFIED ***
     onUpdatePassword: () -> Unit
 ) {
     Card(
@@ -285,20 +305,22 @@ private fun ChangePasswordCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Change Password",
+                text = stringResource(R.string.profile_tab_change_password), // <-- Changed
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
+
+            val hasError = profileUiState.passwordErrorResId != null || profileUiState.passwordErrorMessage != null // <-- Changed
 
             // Current Password
             PasswordTextField(
                 value = currentPassword,
                 onValueChange = onCurrentPasswordChange,
-                label = "Current Password",
+                label = stringResource(R.string.profile_label_current_password), // <-- Changed
                 isVisible = currentPasswordVisible,
                 onVisibilityChange = onCurrentPasswordVisibilityChange,
                 // 14. Error check is now based on the error message
-                isError = authState.passwordErrorMessage != null // <-- *** MODIFIED ***
+                isError = hasError // <-- *** MODIFIED ***
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -306,10 +328,10 @@ private fun ChangePasswordCard(
             PasswordTextField(
                 value = newPassword,
                 onValueChange = onNewPasswordChange,
-                label = "New Password",
+                label = stringResource(R.string.profile_label_new_password), // <-- Changed
                 isVisible = newPasswordVisible,
                 onVisibilityChange = onNewPasswordVisibilityChange,
-                isError = authState.passwordErrorMessage != null // <-- *** MODIFIED ***
+                isError = hasError // <-- *** MODIFIED ***
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -317,26 +339,30 @@ private fun ChangePasswordCard(
             PasswordTextField(
                 value = confirmPassword,
                 onValueChange = onConfirmPasswordChange,
-                label = "Confirm New Password",
+                label = stringResource(R.string.profile_label_confirm_new_password), // <-- Changed
                 isVisible = confirmPasswordVisible,
                 onVisibilityChange = onConfirmPasswordVisibilityChange,
-                isError = authState.passwordErrorMessage != null // <-- *** MODIFIED ***
+                isError = hasError // <-- *** MODIFIED ***
             )
 
-            // 15. Use the AuthUiState
-            if (authState.passwordErrorMessage != null) { // <-- *** MODIFIED ***
+            // 15. Use the ProfileUiState
+            val errorMessage = profileUiState.passwordErrorResId?.let {
+                stringResource(id = it)
+            } ?: profileUiState.passwordErrorMessage
+
+            if (errorMessage != null) { // <-- *** MODIFIED ***
                 Text(
-                    text = authState.passwordErrorMessage, // <-- *** MODIFIED ***
+                    text = errorMessage, // <-- *** MODIFIED ***
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                 )
             }
 
-            // 16. Use the AuthUiState
-            if (authState.passwordUpdateSuccess) { // <-- *** MODIFIED ***
+            // 16. Use the ProfileUiState
+            if (profileUiState.passwordUpdateSuccess) { // <-- *** MODIFIED ***
                 Text(
-                    text = "Password updated successfully!",
+                    text = stringResource(R.string.profile_success_password_updated), // <-- Changed
                     color = MaterialTheme.colorScheme.primary, // Non-error color
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 16.dp, top = 4.dp)
@@ -348,19 +374,19 @@ private fun ChangePasswordCard(
 
             Button(
                 onClick = onUpdatePassword,
-                // 17. Use the AuthUiState
-                enabled = !authState.isPasswordLoading, // <-- *** MODIFIED ***
+                // 17. Use the ProfileUiState
+                enabled = !profileUiState.isPasswordLoading, // <-- *** MODIFIED ***
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // 18. Use the AuthUiState
-                if (authState.isPasswordLoading) { // <-- *** MODIFIED ***
+                // 18. Use the ProfileUiState
+                if (profileUiState.isPasswordLoading) { // <-- *** MODIFIED ***
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Update Password")
+                    Text(stringResource(R.string.profile_button_update_password)) // <-- Changed
                 }
             }
         }
@@ -382,18 +408,28 @@ private fun UserInfoCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            ProfileInfoRow(label = "Username", value = username ?: "N/A")
-            ProfileInfoRow(label = "Email", value = email ?: "N/A")
+            val notAvailable = stringResource(R.string.profile_label_not_available) // <-- Changed
             ProfileInfoRow(
-                label = "Member Since",
-                value = registeredDate?.toFormattedDate() ?: "N/A"
+                label = stringResource(R.string.profile_label_username), // <-- Changed
+                value = username ?: notAvailable
+            )
+            ProfileInfoRow(
+                label = stringResource(R.string.profile_label_email), // <-- Changed
+                value = email ?: notAvailable
+            )
+            ProfileInfoRow(
+                label = stringResource(R.string.profile_label_member_since), // <-- Changed
+                value = registeredDate?.toFormattedDate() ?: notAvailable
             )
         }
     }
 }
 
+// ... (ProfileInfoRow, PasswordTextField, toFormattedDate remain mostly unchanged) ...
 @Composable
 private fun ProfileInfoRow(label: String, value: String) {
+// ... (no changes needed here) ...
+// ...
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "$label:",
@@ -413,15 +449,16 @@ private fun ProfileInfoRow(label: String, value: String) {
 private fun PasswordTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String,
+    label: String, // <-- Now passed as a resolved string
     isVisible: Boolean,
     onVisibilityChange: () -> Unit,
     isError: Boolean
 ) {
     OutlinedTextField(
+// ... (rest of the function is the same) ...
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
+        label = { Text(label) }, // <-- Uses the passed string
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         isError = isError,
@@ -445,7 +482,9 @@ private fun PasswordTextField(
 
 // Helper function (no changes)
 private fun Long.toFormattedDate(): String {
+// ... (no changes needed here) ...
+// ...
     val date = Date(this)
-    val format = SimpleDateFormat("dd MMM yyyY", Locale.getDefault())
+    val format = SimpleDateFormat("dd MMM yY", Locale.getDefault())
     return format.format(date)
 }

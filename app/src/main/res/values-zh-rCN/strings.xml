@@ -1,0 +1,91 @@
+<resources>
+    <string name="app_name">LearningDashboard</string>
+
+    <!-- LoginScreen -->
+    <string name="login_title">OpenPlatform</string>
+    <string name="label_username">用户名</string>
+    <string name="label_password">密码</string>
+    <string name="button_login">登录</string>
+    <string name="prompt_register">没有帐户？立即注册</string>
+
+    <!-- RegisterScreen -->
+    <string name="register_title">创建帐户</string>
+    <string name="label_email">电子邮件</string>
+    <string name="label_confirm_password">确认密码</string>
+    <string name="button_register">注册</string>
+    <string name="prompt_login">已有帐户？前往登录</string>
+
+    <!-- AuthViewModel Validation & Error Messages -->
+    <string name="error_username_empty">用户名不能为空</string>
+    <string name="error_password_empty">密码不能为空</string>
+    <string name="error_user_not_exist">用户不存在，请先注册</string>
+    <string name="error_incorrect_password">密码错误</string>
+    <string name="error_generic">错误：%s</string>
+
+    <!-- Registration Errors -->
+    <string name="error_username_min_length">用户名至少需要3个字符</string>
+    <string name="error_username_invalid_chars">用户名只能包含字母、数字和下划线</string>
+    <string name="error_email_empty">电子邮件不能为空</string>
+    <string name="error_email_invalid">电子邮件格式无效</string>
+    <string name="error_password_min_length">密码至少需要6个字符</string>
+    <string name="error_passwords_no_match">两次输入的密码不一致</string>
+    <string name="error_username_taken">用户名已被占用</string>
+    <string name="error_email_taken">该电子邮件已被注册</string>
+    <string name="error_registration_failed">注册失败：%s</string>
+
+    <!-- Password Update Errors -->
+    <string name="error_all_fields_required">所有字段均为必填项</string>
+    <string name="error_new_passwords_no_match">新密码不匹配</string>
+    <string name="error_new_password_same_as_old">新密码不能与旧密码相同</string>
+    <string name="error_user_not_found">未找到用户</string>
+    <string name="error_incorrect_current_password">当前密码不正确</string>
+    <string name="error_password_update_failed">更新失败：%s</string>
+
+    <!-- ProfileScreen -->
+    <string name="profile_title">个人资料</string>
+    <string name="profile_tab_edit_username">编辑用户名</string>
+    <string name="profile_tab_change_password">更改密码</string>
+    <string name="profile_label_username">用户名</string>
+    <string name="profile_label_email">电子邮件</string>
+    <string name="profile_label_member_since">注册时间</string>
+    <string name="profile_label_not_available">N/A</string>
+    <string name="profile_button_save_changes">保存更改</string>
+    <string name="profile_button_update_password">更新密码</string>
+    <string name="profile_label_current_password">当前密码</string>
+    <string name="profile_label_new_password">新密码</string>
+    <string name="profile_label_confirm_new_password">确认新密码</string>
+    <string name="profile_success_password_updated">密码更新成功！</string>
+    <string name="profile_error_name_empty">名称不能为空</string>
+
+    <!-- ProgressScreen -->
+    <string name="progress_title_daily_usage">每日使用时长（分钟）</string>
+    <string name="progress_title_usage_distribution">使用时段分布</string>
+    <string name="progress_label_night">夜晚</string>
+    <string name="progress_label_morning">早晨</string>
+    <string name="progress_label_afternoon">下午</string>
+    <string name="progress_label_evening">傍晚</string>
+
+    <!-- VideoScreen -->
+    <string name="video_title">视频</string>
+    <string name="video_title_uploaded">已上传视频 %d</string>
+    <string name="video_uploader_you">你</string>
+    <string name="video_uploader_generic">上传者</string>
+    <string name="video_button_upload">上传视频</string>
+    <string name="video_cd_uploader_icon">上传者图标</string>
+
+    <!-- FullScreenVideoScreen -->
+    <string name="video_cd_back">返回</string>
+
+    <!-- UploadVideoScreen -->
+    <string name="upload_title">上传新视频</string>
+    <string name="upload_button_select">从相册选择视频</string>
+    <string name="upload_label_selected_video">已选视频：</string>
+    <string name="upload_button_confirm">确认上传</string>
+    <string name="upload_label_no_video_selected">未选择视频</string>
+
+    <!-- [NEW] Navigation -->
+    <string name="nav_videos">视频</string>
+    <string name="nav_progress">使用情况</string>
+    <string name="nav_profile">个人资料</string>
+    <string name="button_logout">退出登录</string>
+</resources>

@@ -1,9 +1,9 @@
-@file:OptIn(ExperimentalMaterial3Api::class) // <-- Corrected: Removed the 'D'
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.example.learningdashboard.navigation
 
-// import kotlin.OptIn // <-- Removed this, it's not needed
 import androidx.compose.foundation.layout.Arrangement
+// ... (other imports)
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +35,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+// [NEW] Import stringResource and R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -47,9 +49,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-// import com.example.learningdashboard.ViewModels.ProfileViewModel // Not needed
+// [NEW] Import R file
+import com.example.learningdashboard.R
+// [NEW] Import ProfileViewModel
+import com.example.learningdashboard.ViewModels.ProfileViewModel
 import com.example.learningdashboard.ViewModels.SharedViewModel
-import com.example.learningdashboard.auth.AuthUiState // Import AuthUiState
+import com.example.learningdashboard.auth.AuthUiState
 import com.example.learningdashboard.auth.AuthViewModel
 import com.example.learningdashboard.screens.FullScreenVideoScreen
 import com.example.learningdashboard.screens.ProfileScreen
@@ -65,10 +70,11 @@ import java.util.Date
 import java.util.Locale
 
 // --- Navigation route definitions ---
-sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
-    data object Video    : Screen("video",    "Videos",     Icons.Default.PlayArrow)
-    data object Progress : Screen("progress", "Usage Status", Icons.Default.Star)
-    data object Profile  : Screen("profile",  "Profile",          Icons.Default.Person)
+// [MODIFIED] Use resource IDs for labels
+sealed class Screen(val route: String, val labelResId: Int, val icon: ImageVector) {
+    data object Video    : Screen("video",    R.string.nav_videos,    Icons.Default.PlayArrow)
+    data object Progress : Screen("progress", R.string.nav_progress,  Icons.Default.Star)
+    data object Profile  : Screen("profile",  R.string.nav_profile,   Icons.Default.Person)
 }
 
 private val items = listOf(
@@ -78,14 +84,12 @@ private val items = listOf(
 )
 
 // --- Constants for Fullscreen Video Route ---
+// ... (rest of this section is unchanged)
 private const val VIDEO_URL_ARG = "videoUrl"
 private const val FULLSCREEN_VIDEO_ROUTE_TEMPLATE = "fullScreenVideo/{$VIDEO_URL_ARG}"
-
-/**
- * Creates a navigation route for the fullscreen video screen,
- * ensuring the video URL is properly URL-encoded.
- */
 private fun createFullScreenVideoRoute(videoUrl: String): String {
+// ...
+// ...
     val encodedUrl = URLEncoder.encode(videoUrl, StandardCharsets.UTF_8.toString())
     return "fullScreenVideo/$encodedUrl"
 }
@@ -99,7 +103,7 @@ fun MainAppScreen(
 ) {
     MainAppScreenContent(
         onLogout = onLogout,
-        authViewModel = authViewModel // Pass AuthViewModel
+        authViewModel = authViewModel
     )
 }
 
@@ -107,7 +111,7 @@ fun MainAppScreen(
 @Composable
 private fun MainAppScreenContent(
     onLogout: () -> Unit,
-    authViewModel: AuthViewModel? = null // Make nullable for Preview
+    authViewModel: AuthViewModel? = null
 ) {
     val navController = rememberNavController()
     val sharedViewModel: SharedViewModel = viewModel()
@@ -123,12 +127,14 @@ private fun MainAppScreenContent(
         topBar = {
             if (showBars) {
                 TopAppBar(
-                    title = { Text("OpenPlatform") },
+                    // [MODIFIED] Use string resource
+                    title = { Text(stringResource(R.string.login_title)) },
                     actions = {
                         IconButton(onClick = onLogout) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                contentDescription = "Logout"
+                                // [MODIFIED] Use string resource
+                                contentDescription = stringResource(R.string.button_logout)
                             )
                         }
                     }
@@ -141,10 +147,13 @@ private fun MainAppScreenContent(
                     items.forEach { screen ->
                         NavigationBarItem(
                             icon = { Icon(screen.icon, contentDescription = null) },
-                            label = { Text(screen.label) },
+                            // [MODIFIED] Use string resource from labelResId
+                            label = { Text(stringResource(screen.labelResId)) },
                             selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                             onClick = {
                                 navController.navigate(screen.route) {
+// ... (rest of onClick unchanged)
+// ...
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -166,6 +175,8 @@ private fun MainAppScreenContent(
                 .padding(innerPadding)
         ) {
             composable(Screen.Video.route) {
+// ... (VideoScreen composable unchanged)
+// ...
                 VideoScreen(
                     onNavigateToUpload = { navController.navigate("upload") },
                     onNavigateToFullScreen = { videoUrl ->
@@ -180,29 +191,38 @@ private fun MainAppScreenContent(
                 // *** Modification Start ***
                 if (authViewModel != null) {
                     val authState by authViewModel.uiState.collectAsState()
-                    // 1. 在这里应用更改
-                    // 我们现在传递 AuthViewModel，而不是让 ProfileScreen 创建自己的 ProfileViewModel
+                    // [NEW] Get ProfileViewModel instance
+                    val profileViewModel: ProfileViewModel = viewModel()
+
                     ProfileScreen(
                         authState = authState,
-                        authViewModel = authViewModel // <-- *** MODIFIED ***
+                        authViewModel = authViewModel,
+                        profileViewModel = profileViewModel, // <-- [FIX] Pass the VM
+                        onLogout = onLogout                  // <-- [FIX] Pass the logout lambda
                     )
                 } else {
-                    // 2. 预览（Preview）部分也需要更新
-                    // 它也不再需要那些 lambda
-                    ProfileScreen(
-                        authState = AuthUiState(
-                            username = "preview_user",
-                            email = "preview@example.com",
-                            // fullName = "Preview Name", // <-- *** 移除 fullName ***
-                            registeredDate = System.currentTimeMillis()
-                        ),
-                        authViewModel = null // <-- *** MODIFIED ***
-                    )
+                    // [MODIFIED] Preview Fallback
+                    // We cannot (and should not) instantiate an AndroidViewModel
+                    // like ProfileViewModel in a Composable preview.
+                    // Show a placeholder instead.
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Profile Screen (Preview)",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        Text("Previewing this screen is handled in 'ProfileScreen.kt'")
+                    }
                 }
                 // *** Modification End ***
             }
 
             composable("upload") {
+// ... (UploadVideoScreen composable unchanged)
+// ...
                 UploadVideoScreen(
                     onNavigateToVideo = { navController.popBackStack() },
                     sharedViewModel = sharedViewModel
@@ -211,6 +231,8 @@ private fun MainAppScreenContent(
 
             composable(
                 route = FULLSCREEN_VIDEO_ROUTE_TEMPLATE,
+// ... (FullScreenVideoScreen composable unchanged)
+// ...
                 arguments = listOf(navArgument(VIDEO_URL_ARG) { type = NavType.StringType })
             ) { backStackEntry ->
                 val encodedUrl = backStackEntry.arguments?.getString(VIDEO_URL_ARG) ?: ""
@@ -238,10 +260,12 @@ private fun DashboardPreview() {
 }
 
 // --- Helper functions for Preview below ---
-// (These functions already exist in ProfileScreen.kt, but Preview needs them)
-
+// These are helpers for the *preview* in this file.
+// If ProfileScreen.kt also has them, that's fine.
 @Composable
 private fun UserInfoCard(
+// ... (rest of preview helpers unchanged)
+// ...
     username: String?,
     email: String?,
     registeredDate: Long?
@@ -266,6 +290,8 @@ private fun UserInfoCard(
 
 @Composable
 private fun ProfileInfoRow(label: String, value: String) {
+// ...
+// ...
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "$label:",
@@ -282,6 +308,8 @@ private fun ProfileInfoRow(label: String, value: String) {
 }
 
 private fun Long.toFormattedDate(): String {
+// ...
+// ...
     val date = Date(this)
     val format = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
     return format.format(date)

@@ -1,7 +1,10 @@
 package com.example.learningdashboard.ViewModels
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+// Import R
+import com.example.learningdashboard.R
 import com.github.mikephil.charting.data.BarEntry
 // 1. Import PieEntry
 import com.github.mikephil.charting.data.PieEntry
@@ -16,15 +19,16 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-// 3. Define the time buckets
-enum class TimeOfDay(val label: String) {
-    NIGHT("Night"),
-    MORNING("Morning"),
-    AFTERNOON("Afternoon"),
-    EVENING("Evening")
+// 3. Define the time buckets (No string label needed)
+enum class TimeOfDay {
+    NIGHT,
+    MORNING,
+    AFTERNOON,
+    EVENING
 }
 
-class UsageTimeViewModel : ViewModel() {
+// 4. Change to AndroidViewModel to get context
+class UsageTimeViewModel(application: Application) : AndroidViewModel(application) {
 
     // --- Data for Bar Chart ---
     private val _dayLabels = MutableStateFlow(generateDateLabels())
@@ -38,7 +42,7 @@ class UsageTimeViewModel : ViewModel() {
     val chartData: StateFlow<List<BarEntry>> = _chartData.asStateFlow()
 
     // --- Data for Pie Chart ---
-    // 4. Pre-defined average usage for the pie chart (demo data)
+    // 5. Pre-defined average usage
     private val historicalUsageByTimeOfDay = mutableMapOf(
         TimeOfDay.NIGHT to 30f,     // 30 min avg
         TimeOfDay.MORNING to 120f,  // 120 min avg
@@ -46,7 +50,7 @@ class UsageTimeViewModel : ViewModel() {
         TimeOfDay.EVENING to 180f   // 180 min avg
     )
 
-    // 5. Real-time usage for today, broken down by time of day
+    // 6. Real-time usage for today
     private var todayUsageInSecondsByTimeOfDay = mutableMapOf(
         TimeOfDay.NIGHT to 0L,
         TimeOfDay.MORNING to 0L,
@@ -54,7 +58,7 @@ class UsageTimeViewModel : ViewModel() {
         TimeOfDay.EVENING to 0L
     )
 
-    // 6. StateFlow for the pie chart data
+    // 7. StateFlow for the pie chart data
     private val _pieChartData = MutableStateFlow<List<PieEntry>>(emptyList())
     val pieChartData: StateFlow<List<PieEntry>> = _pieChartData.asStateFlow()
 
@@ -81,7 +85,9 @@ class UsageTimeViewModel : ViewModel() {
 
         // --- 2. Update Pie Chart Data ---
         val pieEntries = mutableListOf<PieEntry>()
-        // Combine historical + today's data for each bucket
+        // 8. Get application context to resolve strings
+        val context = getApplication<Application>().applicationContext
+
         for (timeOfDay in TimeOfDay.values()) {
             val historicalMinutes = historicalUsageByTimeOfDay.getOrDefault(timeOfDay, 0f)
             val todayMinutes = todayUsageInSecondsByTimeOfDay.getOrDefault(timeOfDay, 0L) / 60f
@@ -89,8 +95,15 @@ class UsageTimeViewModel : ViewModel() {
 
             // Add to chart only if there is data
             if (totalMinutes > 0) {
+                // 9. Resolve the string label from R.string
+                val label = when (timeOfDay) {
+                    TimeOfDay.NIGHT -> context.getString(R.string.progress_label_night)
+                    TimeOfDay.MORNING -> context.getString(R.string.progress_label_morning)
+                    TimeOfDay.AFTERNOON -> context.getString(R.string.progress_label_afternoon)
+                    TimeOfDay.EVENING -> context.getString(R.string.progress_label_evening)
+                }
                 // The PieEntry takes the value (minutes) and a label
-                pieEntries.add(PieEntry(totalMinutes, timeOfDay.label))
+                pieEntries.add(PieEntry(totalMinutes, label))
             }
         }
         _pieChartData.value = pieEntries
@@ -106,15 +119,15 @@ class UsageTimeViewModel : ViewModel() {
             while (true) {
                 delay(1000) // Every second
 
-                // --- 7. Increment Total Usage (for Bar Chart) ---
+                // --- 10. Increment Total Usage (for Bar Chart) ---
                 todayUsageInSeconds++
 
-                // --- 8. Increment Bucket Usage (for Pie Chart) ---
+                // --- 11. Increment Bucket Usage (for Pie Chart) ---
                 val currentBucket = getCurrentTimeOfDay()
                 val currentSeconds = todayUsageInSecondsByTimeOfDay.getOrDefault(currentBucket, 0L)
                 todayUsageInSecondsByTimeOfDay[currentBucket] = currentSeconds + 1L
 
-                // --- 9. Update Both Charts ---
+                // --- 12. Update Both Charts ---
                 updateChartData()
             }
         }
@@ -147,7 +160,7 @@ class UsageTimeViewModel : ViewModel() {
         return labels
     }
 
-    // 10. Helper function to determine the current time bucket
+    // 13. Helper function to determine the current time bucket
     private fun getCurrentTimeOfDay(): TimeOfDay {
         val currentHour = LocalTime.now().hour
         return when (currentHour) {
